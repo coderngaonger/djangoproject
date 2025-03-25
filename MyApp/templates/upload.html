@@ -1,0 +1,143 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload CSV File</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .container {
+            margin-top: 50px;
+        }
+        .card {
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Django Assignment</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link" href="/index/">Visualization</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/upload/">Upload</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Upload CSV -->
+        <div class="card">
+            <div class="card-header">Upload CSV File</div>
+            <div class="card-body">
+                {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label>Chọn tệp CSV:</label>
+                        <input class="form-control" type="file" name="file" accept=".csv" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Upload CSV</button>
+                </form>
+                {% if success %}
+                    <div class="alert alert-success">{{ success }}</div>
+                    <a href="{% url 'index' %}" class="btn btn-success">Xem Visualize</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Thêm Đơn Hàng Mới -->
+        <div class="card">
+            <div class="card-header">Thêm Đơn Hàng</div>
+            <div class="card-body">
+                <form method="post" action="/add_order/">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label>Thời gian đặt hàng</label>
+                        <input type="datetime-local" class="form-control" name="created_at" id="created_at" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Mã Đơn Hàng</label>
+                        <input type="text" class="form-control" name="order_code" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Mã Khách Hàng</label>
+                        <input type="text" class="form-control" name="customer_id" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Tên Khách Hàng</label>
+                        <input type="text" class="form-control" name="customer_name" required>
+                    </div>
+
+                    <!-- Mã Nhóm Hàng -->
+                    <div class="mb-3">
+                        <label>Mã Nhóm Hàng</label>
+                        <select id="group_code" class="form-control" required>
+                            <option value="">Chọn Mã Nhóm Hàng</option>
+                            {% for group in groups %}
+                                <option value="{{ group.group_code }}">{{ group.group_code }} - {{ group.group_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Mã Mặt Hàng -->
+                    <div class="mb-3">
+                        <label>Mã Mặt Hàng</label>
+                        <select id="product_code" name="product_code" class="form-control" required></select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Số Lượng</label>
+                        <input type="number" class="form-control" name="quantity" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Thành Tiền</label>
+                        <input type="number" class="form-control" name="total_amount" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Thêm Đơn Hàng</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const now = new Date();
+            const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+                .toISOString().slice(0, 16);
+            document.getElementById('created_at').value = localDateTime;
+        });
+
+        document.getElementById('group_code').addEventListener('change', function() {
+            var groupCode = this.value;
+            if (groupCode) {
+                fetch(`/get-products/${groupCode}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const productSelect = document.getElementById('product_code');
+                        productSelect.innerHTML = '<option value="">Chọn Mã Mặt Hàng</option>';
+                        data.forEach(product => {
+                            const option = document.createElement('option');
+                            option.value = product.product_code;
+                            option.text = `${product.product_code} - ${product.product_name}`;
+                            productSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error('Lỗi khi tải dữ liệu:', error));
+            }
+        });
+    </script>
+</body>
+</html>
